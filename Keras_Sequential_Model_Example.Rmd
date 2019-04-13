@@ -1,0 +1,99 @@
+---
+title: "Untitled"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+# Input: 10000 rows and 3 columns of uniform distribution
+
+
+```{r}
+x_data_train = matrix(data=runif(30000), nrow=10000, ncol=3)
+```
+
+
+# Output
+```{r}
+y_data_train = ifelse(rowSums(x_data_train) > 1.5, 1, 0)
+```
+
+
+```{r}
+y_data_train_cat = to_categorical(y_data_train, num_classes = 2)
+```
+
+## Creating the sequential model
+```{r}
+
+model = keras_model_sequential() %>%   
+  layer_dense(units = 64, activation = "relu", input_shape = ncol(x_data_train)) %>%
+  layer_dense(units = 64, activation = "relu") %>%
+  layer_dense(units = ncol(y_data_train_cat), activation = "softmax")
+
+model
+```
+
+```{r}
+compile(model, loss = "categorical_crossentropy", optimizer = optimizer_rmsprop(), metrics = "accuracy")
+
+history = fit(model,  x_data_train, y_data_train_cat, epochs = 20, batch_size = 128, validation_split = 0.2)
+
+plot(history)
+```
+## Validating with unseen data
+
+```{r}
+x_data_test = matrix(data=runif(3000), nrow=1000, ncol=3)
+dim(x_data_test) 
+```
+
+```{r}
+y_data_pred = predict_classes(model, x_data_test)
+
+y_data_pred_prob = predict(model, x_data_test)
+```
+
+
+
+```{r}
+y_data_real = ifelse(rowSums(x_data_test) > 1.5, 1, 0)
+y_data_real_cat = to_categorical(y_data_real)
+```
+
+
+## Evaluation on training data
+
+```{r}
+evaluate(model, x_data_train, y_data_train_cat, verbose = 0)
+```
+
+
+## Evaluation on Test data (we need the one-hot version)
+
+```{r}
+evaluate(model, x_data_test, y_data_real_cat, verbose = 0)
+```
+
+
+
